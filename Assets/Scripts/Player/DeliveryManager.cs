@@ -20,10 +20,25 @@ public class DeliveryManager : MonoBehaviour
     [Header("Delivery")]
     [SerializeField] private int baseReward = 50;
 
+    [Header("Start Door")]
+    [SerializeField] private DeliveryStartDoor startDoor;
+
     [Header("UI")]
     [SerializeField] private TextMeshProUGUI coinText;
     [SerializeField] private GameObject deliveryCompletePanel;
     [SerializeField] private TextMeshProUGUI deliveryCompleteText;
+
+    [Header("Route")]
+    [SerializeField] private RouteManager routeManager;
+
+    [Header("Payment")]
+    [SerializeField] private int baseOrderValue = 100;
+
+    public int CurrentOrderValue { get; private set; }
+    public int ShopkeeperShare { get; private set; }
+    public int PlayerProfit { get; private set; }
+
+    public bool AwaitingPayment { get; private set; }
 
     private int coins = 0;
 
@@ -47,21 +62,36 @@ public class DeliveryManager : MonoBehaviour
         int randomIndex = Random.Range(0, customerNames.Length);
 
         CurrentCustomer = customerNames[randomIndex];
-        CurrentReward = baseReward;
+
+        CurrentOrderValue = baseOrderValue;
+
+        // Player's profit is 50% of total order value
+        ShopkeeperShare = CurrentOrderValue / 2;
+        PlayerProfit = CurrentOrderValue - ShopkeeperShare;
+
+        CurrentReward = PlayerProfit;
 
         DeliveryActive = false;
+        AwaitingPayment = false;
 
         Debug.Log(
             "New Delivery → Customer: " +
             CurrentCustomer +
-            " | Reward: " +
-            CurrentReward
+            " | Order Value: " +
+            CurrentOrderValue +
+            " | Player Profit: " +
+            PlayerProfit
         );
     }
 
     public void AcceptDelivery()
     {
         DeliveryActive = true;
+
+        if (startDoor != null)
+        {
+            startDoor.OpenDoor();
+        }
 
         Debug.Log(
             "Delivery Started → Deliver to: " +
@@ -73,17 +103,19 @@ public class DeliveryManager : MonoBehaviour
     {
         DeliveryActive = false;
 
-        coins += CurrentReward;
+        // Payment is now waiting at the shopkeeper
+        AwaitingPayment = true;
 
-        UpdateCoinUI();
+        // Open the selected route door
+        if (routeManager != null)
+        {
+            routeManager.OpenSelectedDoor();
+        }
 
         ShowDeliveryComplete();
 
         Debug.Log(
-            "Delivery Completed! +" +
-            CurrentReward +
-            " Coins | Total Coins: " +
-            coins
+            "Delivery Completed! Return to Shopkeeper for payment."
         );
     }
 
@@ -119,5 +151,24 @@ public class DeliveryManager : MonoBehaviour
 
         if (deliveryCompletePanel != null)
             deliveryCompletePanel.SetActive(false);
+    }
+
+    public void CollectPayment()
+    {
+        if (!AwaitingPayment)
+            return;
+
+        coins += PlayerProfit;
+
+        AwaitingPayment = false;
+
+        UpdateCoinUI();
+
+        Debug.Log(
+            "Payment Collected! +" +
+            PlayerProfit +
+            " Coins | Total Coins: " +
+            coins
+        );
     }
 }
