@@ -11,6 +11,7 @@ public class PlayerInteraction : MonoBehaviour
     [SerializeField] private GameObject deliveryOrderPanel;
     [SerializeField] private TextMeshProUGUI customerText;
     [SerializeField] private TextMeshProUGUI rewardText;
+    [SerializeField] private TextMeshProUGUI objectiveText;
 
     [Header("Delivery")]
     [SerializeField] private DeliveryManager deliveryManager;
@@ -63,7 +64,7 @@ public class PlayerInteraction : MonoBehaviour
         }
     }
 
-    public void AcceptDelivery()
+            public void AcceptDelivery()
     {
         deliveryOrderPanel.SetActive(false);
 
@@ -72,10 +73,16 @@ public class PlayerInteraction : MonoBehaviour
             interactText.gameObject.SetActive(false);
         }
 
-        Debug.Log(
-            "Delivery Accepted! Customer: " +
-            deliveryManager.CurrentCustomer
-        );
+        deliveryManager.AcceptDelivery();
+
+        if (objectiveText != null)
+        {
+            objectiveText.text =
+                "DELIVER TO: " +
+                deliveryManager.CurrentCustomer;
+
+            objectiveText.gameObject.SetActive(true);
+        }
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
