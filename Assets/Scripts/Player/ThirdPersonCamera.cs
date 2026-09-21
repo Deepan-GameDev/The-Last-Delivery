@@ -16,6 +16,11 @@ public class ThirdPersonCamera : MonoBehaviour
     [Header("Follow")]
     [SerializeField] private float followSmooth = 12f;
 
+    [Header("Collision")]
+    [SerializeField] private float collisionRadius = 0.25f;
+    [SerializeField] private float collisionOffset = 0.15f;
+    [SerializeField] private LayerMask collisionLayers;
+
     private float yaw;
     private float pitch;
 
@@ -35,20 +40,42 @@ public class ThirdPersonCamera : MonoBehaviour
         if (target == null)
             return;
 
-        // Mouse controls camera only
+        // Mouse rotation
         yaw += Input.GetAxis("Mouse X") * sensitivity;
         pitch -= Input.GetAxis("Mouse Y") * sensitivity;
 
         pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
 
-        Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
+        Quaternion rotation =
+            Quaternion.Euler(pitch, yaw, 0f);
 
         Vector3 targetPosition =
             target.position + Vector3.up * height;
 
-        Vector3 desiredPosition =
-            targetPosition - rotation * Vector3.forward * distance;
+        // Normal camera position
+        Vector3 direction =
+            -(rotation * Vector3.forward);
 
+        float currentDistance = distance;
+
+        // Camera collision check
+        if (Physics.SphereCast(
+            targetPosition,
+            collisionRadius,
+            direction,
+            out RaycastHit hit,
+            distance,
+            collisionLayers,
+            QueryTriggerInteraction.Ignore))
+        {
+            currentDistance =
+                Mathf.Max(0.5f, hit.distance - collisionOffset);
+        }
+
+        Vector3 desiredPosition =
+            targetPosition + direction * currentDistance;
+
+        // Smooth follow
         transform.position = Vector3.Lerp(
             transform.position,
             desiredPosition,
