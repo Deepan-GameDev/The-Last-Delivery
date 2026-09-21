@@ -48,8 +48,16 @@ public class PlayerInteraction : MonoBehaviour
                 paymentPanel != null &&
                 paymentPanel.activeSelf;
 
+            // Shopkeeper interaction is allowed when:
+            // 1. No delivery is currently active
+            // OR
+            // 2. Payment is waiting to be collected
+            bool canTalkToShopkeeper =
+                !deliveryManager.DeliveryActive;
+
             interactText.gameObject.SetActive(
                 canInteract &&
+                canTalkToShopkeeper &&
                 !panelOpen &&
                 !paymentOpen
             );

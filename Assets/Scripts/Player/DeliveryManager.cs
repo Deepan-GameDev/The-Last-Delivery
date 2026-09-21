@@ -34,6 +34,11 @@ public class DeliveryManager : MonoBehaviour
     [Header("Payment")]
     [SerializeField] private int baseOrderValue = 100;
 
+    [Header("Bag")]
+    [SerializeField] private int bagCapacity = 1;
+
+public int BagCapacity => bagCapacity;
+
     public int CurrentOrderValue { get; private set; }
     public int ShopkeeperShare { get; private set; }
     public int PlayerProfit { get; private set; }
