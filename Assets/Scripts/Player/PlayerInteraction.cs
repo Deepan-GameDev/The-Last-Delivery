@@ -125,12 +125,35 @@ public class PlayerInteraction : MonoBehaviour
                 deliveryManager.GetActiveCustomersText();
         }
 
+        // --- DIAGNOSTIC LOGS (remove after fix is confirmed) ---
+        Debug.Log(
+            "[UpdateOrderUI] rewardText is null: " +
+            (rewardText == null) +
+            " | CurrentReward: " +
+            deliveryManager.CurrentReward
+        );
+        // --------------------------------------------------------
+
         if (rewardText != null)
         {
             rewardText.text =
                 "Reward: " +
                 deliveryManager.CurrentReward +
                 " Coins";
+
+            Debug.Log(
+                "[UpdateOrderUI] rewardText.text set to: " +
+                rewardText.text +
+                " | rewardText object: " +
+                rewardText.gameObject.name
+            );
+        }
+        else
+        {
+            Debug.LogWarning(
+                "[UpdateOrderUI] rewardText is NOT assigned " +
+                "in the Inspector on PlayerInteraction!"
+            );
         }
     }
     // =========================================

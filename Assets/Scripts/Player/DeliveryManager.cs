@@ -231,88 +231,87 @@ public class DeliveryManager : MonoBehaviour
     // --------------------------------------------------
 
     public void CompleteDelivery(bool wasLate)
+{
+    if (!DeliveryActive)
+        return;
+
+    if (activeCustomers.Count == 0)
+        return;
+
+    string completedCustomer =
+        activeCustomers[0];
+
+    // Remove delivered customer
+    activeCustomers.RemoveAt(0);
+
+    deliveredCount++;
+
+    // ---------------------------------------------
+    // LATE PENALTY
+    // ---------------------------------------------
+
+    if (wasLate)
     {
-        if (!DeliveryActive)
-            return;
-
-        if (activeCustomers.Count == 0)
-            return;
-
-        string completedCustomer =
-            activeCustomers[0];
-
-        // Remove first customer
-        activeCustomers.RemoveAt(0);
-
-        deliveredCount++;
-
-        // Penalty only for late delivery
-        if (wasLate)
-        {
-            PlayerProfit = Mathf.Max(
-                0,
-                PlayerProfit - failurePenalty
-            );
-
-            Debug.Log(
-                completedCustomer +
-                " delivered late. Penalty: " +
-                failurePenalty +
-                " Coins"
-            );
-        }
-
-        // Route door opens after actual delivery
-        if (routeManager != null)
-        {
-            routeManager.OpenSelectedDoor();
-        }
-
-        // ---------------------------------------------
-        // MORE CUSTOMERS REMAIN
-        // ---------------------------------------------
-
-        if (activeCustomers.Count > 0)
-        {
-            CurrentOrderValue =
-                baseOrderValue * activeCustomers.Count;
-
-            ShopkeeperShare =
-                CurrentOrderValue / 2;
-
-            PlayerProfit =
-                CurrentOrderValue - ShopkeeperShare;
-
-            CurrentReward = PlayerProfit;
-
-            Debug.Log(
-                "Delivered: " +
-                completedCustomer +
-                " | Next Customer: " +
-                CurrentCustomer
-            );
-
-            ShowNextCustomer();
-
-            return;
-        }
-
-        // ---------------------------------------------
-        // ALL CUSTOMERS DELIVERED
-        // ---------------------------------------------
-
-        DeliveryActive = false;
-        AwaitingPayment = true;
-
-        UpdatePaymentValues();
-
-        ShowDeliveryComplete();
+        PlayerProfit = Mathf.Max(
+            0,
+            PlayerProfit - failurePenalty
+        );
 
         Debug.Log(
-            "All Deliveries Completed! " +
-            "Return to Shopkeeper."
+            completedCustomer +
+            " delivered late. Penalty: -" +
+            failurePenalty +
+            " Coins"
         );
     }
+
+    // Route door opens after actual delivery
+    if (routeManager != null)
+    {
+        routeManager.OpenSelectedDoor();
+    }
+
+    // ---------------------------------------------
+    // MORE CUSTOMERS REMAIN
+    // ---------------------------------------------
+
+    if (activeCustomers.Count > 0)
+    {
+        Debug.Log(
+            "Delivered: " +
+            completedCustomer +
+            " | Next Customer: " +
+            CurrentCustomer +
+            " | Remaining Profit: " +
+            PlayerProfit
+        );
+
+        ShowNextCustomer();
+
+        return;
+    }
+
+    // ---------------------------------------------
+    // ALL CUSTOMERS DELIVERED
+    // ---------------------------------------------
+
+    DeliveryActive = false;
+    AwaitingPayment = true;
+
+    // IMPORTANT:
+    // Do NOT call UpdatePaymentValues() here.
+    // The active customer list is now empty,
+    // but PlayerProfit must keep the earned amount.
+
+    ShowDeliveryComplete();
+
+    Debug.Log(
+        "All Deliveries Completed! " +
+        "Final Player Profit: " +
+        PlayerProfit +
+        " Coins. Return to Shopkeeper."
+    );
+}
 
     // --------------------------------------------------
     // NEXT CUSTOMER
