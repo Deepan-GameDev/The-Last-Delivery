@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using System.Collections;
+using System.Collections.Generic;
 
 public class DeliveryManager : MonoBehaviour
 {
@@ -33,23 +34,76 @@ public class DeliveryManager : MonoBehaviour
 
     [Header("Payment")]
     [SerializeField] private int baseOrderValue = 100;
+    [SerializeField] private int failurePenalty = 25;
 
     [Header("Bag")]
     [SerializeField] private int bagCapacity = 1;
 
-public int BagCapacity => bagCapacity;
+    [Header("Customer Spawner")]
+    [SerializeField] private CustomerSpawner customerSpawner;
+
+    public int BagCapacity => bagCapacity;
+
+    public bool DeliveryFailedState { get; private set; }
+    public int FailurePenalty => failurePenalty;
+
+    // Current active customers
+    private List<string> activeCustomers = new List<string>();
+
+    // Number of customers already delivered
+    private int deliveredCount = 0;
+
+    public string CurrentCustomer
+    {
+        get
+        {
+            if (activeCustomers.Count > 0)
+                return activeCustomers[0];
+
+            return "";
+        }
+    }
 
     public int CurrentOrderValue { get; private set; }
     public int ShopkeeperShare { get; private set; }
     public int PlayerProfit { get; private set; }
 
+    public int CurrentReward { get; private set; }
+
     public bool AwaitingPayment { get; private set; }
 
-    private int coins = 0;
-
-    public string CurrentCustomer { get; private set; }
-    public int CurrentReward { get; private set; }
     public bool DeliveryActive { get; private set; }
+
+    public int ActiveOrderCount => activeCustomers.Count;
+
+    public string GetActiveCustomersText()
+    {
+        if (activeCustomers.Count == 0)
+            return "";
+
+        string result = "";
+
+        for (int i = 0; i < activeCustomers.Count; i++)
+        {
+            result +=
+                "Customer " +
+                (i + 1) +
+                ": " +
+                activeCustomers[i];
+
+            if (i < activeCustomers.Count - 1)
+                result += "\n";
+        }
+
+        return result;
+    }
+
+    public List<string> GetActiveCustomerNames()
+    {
+        return new List<string>(activeCustomers);
+    }
+
+    private int coins = 0;
 
     private void Start()
     {
@@ -59,78 +113,222 @@ public int BagCapacity => bagCapacity;
             deliveryCompletePanel.SetActive(false);
     }
 
+    // --------------------------------------------------
+    // GENERATE FIRST ORDER
+    // --------------------------------------------------
+
     public void GenerateDelivery()
     {
         if (customerNames.Length == 0)
             return;
 
-        int randomIndex = Random.Range(0, customerNames.Length);
+        if (activeCustomers.Count >= bagCapacity)
+        {
+            Debug.Log("Bag is full!");
+            return;
+        }
 
-        CurrentCustomer = customerNames[randomIndex];
+        string newCustomer = GetRandomCustomer();
+
+        if (newCustomer == "")
+            return;
+
+        activeCustomers.Add(newCustomer);
 
         CurrentOrderValue = baseOrderValue;
 
-        // Player's profit is 50% of total order value
-        ShopkeeperShare = CurrentOrderValue / 2;
-        PlayerProfit = CurrentOrderValue - ShopkeeperShare;
-
-        CurrentReward = PlayerProfit;
+        UpdatePaymentValues();
 
         DeliveryActive = false;
         AwaitingPayment = false;
+        deliveredCount = 0;
 
-        Debug.Log(
-            "New Delivery → Customer: " +
-            CurrentCustomer +
-            " | Order Value: " +
-            CurrentOrderValue +
-            " | Player Profit: " +
-            PlayerProfit
-        );
-    }
-
-    public void AcceptDelivery()
-    {
-        DeliveryActive = true;
-
-        if (startDoor != null)
+        // Spawn all currently active customers
+        if (customerSpawner != null)
         {
-            startDoor.OpenDoor();
+            customerSpawner.SpawnCustomers(
+                activeCustomers
+            );
         }
 
         Debug.Log(
-            "Delivery Started → Deliver to: " +
-            CurrentCustomer
+            "Order Added → Customer: " +
+            newCustomer +
+            " | Orders in Bag: " +
+            activeCustomers.Count +
+            "/" +
+            bagCapacity
         );
     }
 
-    public void CompleteDelivery()
+    // --------------------------------------------------
+    // RANDOM CUSTOMER
+    // --------------------------------------------------
+
+    private string GetRandomCustomer()
     {
-        DeliveryActive = false;
+        List<string> availableCustomers = new List<string>();
 
-        // Payment is now waiting at the shopkeeper
-        AwaitingPayment = true;
+        foreach (string customer in customerNames)
+        {
+            if (!activeCustomers.Contains(customer))
+            {
+                availableCustomers.Add(customer);
+            }
+        }
 
-        // Open the selected route door
+        if (availableCustomers.Count == 0)
+            return "";
+
+        int randomIndex =
+            Random.Range(0, availableCustomers.Count);
+
+        return availableCustomers[randomIndex];
+    }
+
+    // --------------------------------------------------
+    // PAYMENT CALCULATION
+    // --------------------------------------------------
+
+    private void UpdatePaymentValues()
+    {
+        CurrentOrderValue =
+            baseOrderValue * activeCustomers.Count;
+
+        ShopkeeperShare =
+            CurrentOrderValue / 2;
+
+        PlayerProfit =
+            CurrentOrderValue - ShopkeeperShare;
+
+        CurrentReward = PlayerProfit;
+    }
+
+    // --------------------------------------------------
+    // ACCEPT DELIVERY
+    // --------------------------------------------------
+
+    public void AcceptDelivery()
+    {
+        if (activeCustomers.Count == 0)
+            return;
+
+        // Don't start the actual delivery yet.
+        // Delivery starts only after the player
+        // finishes taking all available orders.
+
+        Debug.Log(
+            "Order Accepted → " +
+            CurrentCustomer +
+            " | Orders: " +
+            activeCustomers.Count +
+            "/" +
+            bagCapacity
+        );
+    }
+    // --------------------------------------------------
+    // CUSTOMER DELIVERED
+    // --------------------------------------------------
+
+    public void CompleteDelivery(bool wasLate)
+    {
+        if (!DeliveryActive)
+            return;
+
+        if (activeCustomers.Count == 0)
+            return;
+
+        string completedCustomer =
+            activeCustomers[0];
+
+        // Remove first customer
+        activeCustomers.RemoveAt(0);
+
+        deliveredCount++;
+
+        // Penalty only for late delivery
+        if (wasLate)
+        {
+            PlayerProfit = Mathf.Max(
+                0,
+                PlayerProfit - failurePenalty
+            );
+
+            Debug.Log(
+                completedCustomer +
+                " delivered late. Penalty: " +
+                failurePenalty +
+                " Coins"
+            );
+        }
+
+        // Route door opens after actual delivery
         if (routeManager != null)
         {
             routeManager.OpenSelectedDoor();
         }
 
+        // ---------------------------------------------
+        // MORE CUSTOMERS REMAIN
+        // ---------------------------------------------
+
+        if (activeCustomers.Count > 0)
+        {
+            CurrentOrderValue =
+                baseOrderValue * activeCustomers.Count;
+
+            ShopkeeperShare =
+                CurrentOrderValue / 2;
+
+            PlayerProfit =
+                CurrentOrderValue - ShopkeeperShare;
+
+            CurrentReward = PlayerProfit;
+
+            Debug.Log(
+                "Delivered: " +
+                completedCustomer +
+                " | Next Customer: " +
+                CurrentCustomer
+            );
+
+            ShowNextCustomer();
+
+            return;
+        }
+
+        // ---------------------------------------------
+        // ALL CUSTOMERS DELIVERED
+        // ---------------------------------------------
+
+        DeliveryActive = false;
+        AwaitingPayment = true;
+
+        UpdatePaymentValues();
+
         ShowDeliveryComplete();
 
         Debug.Log(
-            "Delivery Completed! Return to Shopkeeper for payment."
+            "All Deliveries Completed! " +
+            "Return to Shopkeeper."
         );
     }
 
-    private void UpdateCoinUI()
+    // --------------------------------------------------
+    // NEXT CUSTOMER
+    // --------------------------------------------------
+
+    private void ShowNextCustomer()
     {
-        if (coinText != null)
-        {
-            coinText.text = "COINS: " + coins;
-        }
+        Debug.Log(
+            "NEXT CUSTOMER → " +
+            CurrentCustomer
+        );
     }
+
+    // --------------------------------------------------
+    // DELIVERY COMPLETE UI
+    // --------------------------------------------------
 
     private void ShowDeliveryComplete()
     {
@@ -142,8 +340,8 @@ public int BagCapacity => bagCapacity;
         if (deliveryCompleteText != null)
         {
             deliveryCompleteText.text =
-                "DELIVERY COMPLETE!\n+" +
-                CurrentReward +
+                "ALL DELIVERIES COMPLETE!\n+" +
+                PlayerProfit +
                 " COINS";
         }
 
@@ -158,6 +356,10 @@ public int BagCapacity => bagCapacity;
             deliveryCompletePanel.SetActive(false);
     }
 
+    // --------------------------------------------------
+    // PAYMENT
+    // --------------------------------------------------
+
     public void CollectPayment()
     {
         if (!AwaitingPayment)
@@ -169,7 +371,6 @@ public int BagCapacity => bagCapacity;
 
         UpdateCoinUI();
 
-        // Close the shop exit after payment is settled
         if (startDoor != null)
         {
             startDoor.CloseDoor();
@@ -180,6 +381,99 @@ public int BagCapacity => bagCapacity;
             PlayerProfit +
             " Coins | Total Coins: " +
             coins
+        );
+
+        // Reset delivery data
+        activeCustomers.Clear();
+        deliveredCount = 0;
+        CurrentOrderValue = 0;
+        ShopkeeperShare = 0;
+        PlayerProfit = 0;
+        CurrentReward = 0;
+    }
+
+    // --------------------------------------------------
+    // FAILED DELIVERY
+    // --------------------------------------------------
+
+    public void DeliveryFailed()
+    {
+        if (!DeliveryActive)
+            return;
+
+        DeliveryActive = false;
+        AwaitingPayment = true;
+        DeliveryFailedState = true;
+
+        if (routeManager != null)
+        {
+            routeManager.OpenSelectedDoor();
+        }
+
+        Debug.Log(
+            "DELIVERY FAILED! Penalty: " +
+            failurePenalty +
+            " Coins. Return to Shopkeeper."
+        );
+    }
+
+    // --------------------------------------------------
+    // COINS
+    // --------------------------------------------------
+
+    private void UpdateCoinUI()
+    {
+        if (coinText != null)
+        {
+            coinText.text =
+                "COINS: " + coins;
+        }
+    }
+
+    public bool HasEnoughCoins(int amount)
+    {
+        return coins >= amount;
+    }
+
+    public void SpendCoins(int amount)
+    {
+        if (amount <= 0)
+            return;
+
+        if (coins < amount)
+            return;
+
+        coins -= amount;
+
+        UpdateCoinUI();
+
+        Debug.Log(
+            "Spent " +
+            amount +
+            " Coins | Remaining: " +
+            coins
+        );
+    }
+
+    public void StartDelivery()
+    {
+        if (activeCustomers.Count == 0)
+            return;
+
+        DeliveryActive = true;
+        AwaitingPayment = false;
+
+        if (startDoor != null)
+        {
+            startDoor.OpenDoor();
+        }
+
+        Debug.Log(
+            "DELIVERY STARTED → " +
+            "First Customer: " +
+            CurrentCustomer +
+            " | Total Orders: " +
+            activeCustomers.Count
         );
     }
 }

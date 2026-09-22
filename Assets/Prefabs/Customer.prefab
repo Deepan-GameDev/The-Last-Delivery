@@ -284,7 +284,7 @@ Transform:
   m_GameObject: {fileID: 2582693456415139418}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.41553026, z: -0, w: 0.9095794}
-  m_LocalPosition: {x: 63.786186, y: 0.901, z: 134.70995}
+  m_LocalPosition: {x: 70.93644, y: 1.1485163, z: 69.987236}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -385,9 +385,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7b2b43417dc84264d9485dfa1269f127, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CustomerDelivery
+  customerName: 
   deliveryPoint: {fileID: 3290324657757170404}
   deliveryRange: 2.5
   deliverText: {fileID: 0}
+  objectiveText: {fileID: 0}
+  deliveryTimer: {fileID: 0}
 --- !u!1 &8069482185078446082
 GameObject:
   m_ObjectHideFlags: 0

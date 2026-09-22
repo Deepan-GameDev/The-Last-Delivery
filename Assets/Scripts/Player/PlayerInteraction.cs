@@ -22,6 +22,9 @@ public class PlayerInteraction : MonoBehaviour
     [Header("Delivery")]
     [SerializeField] private DeliveryManager deliveryManager;
 
+    [Header("Timer")]
+    [SerializeField] private DeliveryTimer deliveryTimer;
+
     private bool canInteract;
 
     private void Update()
@@ -36,8 +39,10 @@ public class PlayerInteraction : MonoBehaviour
 
         canInteract = distance <= interactionRange;
 
-        // Show TALK only when near Shopkeeper
-        // and no panel is currently open.
+        // -----------------------------------------
+        // SHOPKEEPER TALK UI
+        // -----------------------------------------
+
         if (interactText != null)
         {
             bool panelOpen =
@@ -48,12 +53,12 @@ public class PlayerInteraction : MonoBehaviour
                 paymentPanel != null &&
                 paymentPanel.activeSelf;
 
-            // Shopkeeper interaction is allowed when:
-            // 1. No delivery is currently active
-            // OR
-            // 2. Payment is waiting to be collected
+            // Can talk when:
+            // - No delivery currently running
+            // - Payment is not waiting
             bool canTalkToShopkeeper =
-                !deliveryManager.DeliveryActive;
+                !deliveryManager.DeliveryActive &&
+                !deliveryManager.AwaitingPayment;
 
             interactText.gameObject.SetActive(
                 canInteract &&
@@ -68,35 +73,56 @@ public class PlayerInteraction : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.E))
         {
-            // 1. Payment is pending
+            // Payment pending
             if (deliveryManager.AwaitingPayment)
             {
                 OpenPaymentPanel();
                 return;
             }
 
-            // 2. Delivery is currently active
-            // Don't allow a new order
+            // Delivery currently active
             if (deliveryManager.DeliveryActive)
             {
                 return;
             }
 
-            // 3. No active delivery and no payment pending
-            // Start a new order
+            // Open next order
             OpenDeliveryOrder();
         }
     }
 
+    // =========================================
+    // OPEN DELIVERY ORDER
+    // =========================================
+
     private void OpenDeliveryOrder()
     {
+        if (deliveryManager.ActiveOrderCount >=
+            deliveryManager.BagCapacity)
+        {
+            Debug.Log("BAG FULL!");
+            return;
+        }
+
         deliveryManager.GenerateDelivery();
 
+        UpdateOrderUI();
+
+        deliveryOrderPanel.SetActive(true);
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+    // =========================================
+    // UPDATE ORDER UI
+    // =========================================
+
+    private void UpdateOrderUI()
+    {
         if (customerText != null)
         {
             customerText.text =
-                "Customer: " +
-                deliveryManager.CurrentCustomer;
+                deliveryManager.GetActiveCustomersText();
         }
 
         if (rewardText != null)
@@ -106,12 +132,95 @@ public class PlayerInteraction : MonoBehaviour
                 deliveryManager.CurrentReward +
                 " Coins";
         }
-
-        deliveryOrderPanel.SetActive(true);
-
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
     }
+    // =========================================
+    // ACCEPT DELIVERY
+    // =========================================
+
+    public void AcceptDelivery()
+    {
+        if (deliveryOrderPanel != null)
+            deliveryOrderPanel.SetActive(false);
+
+        if (interactText != null)
+            interactText.gameObject.SetActive(false);
+
+        deliveryManager.AcceptDelivery();
+
+        int currentOrders =
+            deliveryManager.ActiveOrderCount;
+
+        // Bag is full → start delivery
+        if (currentOrders >= deliveryManager.BagCapacity)
+        {
+            deliveryManager.StartDelivery();
+
+            if (deliveryTimer != null)
+            {
+                if (currentOrders == 1)
+                {
+                    deliveryTimer.StartTimer();
+                }
+                else
+                {
+                    deliveryTimer.StartTimer();
+
+                    for (int i = 1; i < currentOrders; i++)
+                    {
+                        deliveryTimer.AddExtraTime();
+                    }
+                }
+            }
+
+            UpdateObjective();
+
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+
+            return;
+        }
+
+        // Bag still has space
+        // Keep player at shopkeeper so another
+        // order can be collected.
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
+        Debug.Log(
+            "Order stored in bag. " +
+            "Orders: " +
+            currentOrders +
+            "/" +
+            deliveryManager.BagCapacity
+        );
+    }
+
+    // =========================================
+    // OBJECTIVE
+    // =========================================
+
+    private void UpdateObjective()
+    {
+        if (objectiveText == null)
+            return;
+
+        if (deliveryManager.ActiveOrderCount > 0)
+        {
+            objectiveText.text =
+                "DELIVER TO: " +
+                deliveryManager.CurrentCustomer;
+
+            objectiveText.gameObject.SetActive(true);
+        }
+        else
+        {
+            objectiveText.gameObject.SetActive(false);
+        }
+    }
+
+    // =========================================
+    // PAYMENT PANEL
+    // =========================================
 
     private void OpenPaymentPanel()
     {
@@ -148,27 +257,9 @@ public class PlayerInteraction : MonoBehaviour
         Cursor.visible = true;
     }
 
-    public void AcceptDelivery()
-    {
-        deliveryOrderPanel.SetActive(false);
-
-        if (interactText != null)
-            interactText.gameObject.SetActive(false);
-
-        deliveryManager.AcceptDelivery();
-
-        if (objectiveText != null)
-        {
-            objectiveText.text =
-                "DELIVER TO: " +
-                deliveryManager.CurrentCustomer;
-
-            objectiveText.gameObject.SetActive(true);
-        }
-
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-    }
+    // =========================================
+    // COLLECT PAYMENT
+    // =========================================
 
     public void CollectPayment()
     {
