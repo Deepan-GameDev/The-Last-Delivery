@@ -89,6 +89,8 @@ public class BagUpgradeManager : MonoBehaviour
         currentBagLevel++;
         bagCapacity = nextCapacity;
 
+        deliveryManager.SetBagCapacity(bagCapacity);
+
         UpdateUpgradeUI();
 
         Debug.Log(

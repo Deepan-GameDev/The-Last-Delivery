@@ -57,8 +57,7 @@ public class PlayerInteraction : MonoBehaviour
             // - No delivery currently running
             // - Payment is not waiting
             bool canTalkToShopkeeper =
-                !deliveryManager.DeliveryActive &&
-                !deliveryManager.AwaitingPayment;
+                !deliveryManager.DeliveryActive;
 
             interactText.gameObject.SetActive(
                 canInteract &&

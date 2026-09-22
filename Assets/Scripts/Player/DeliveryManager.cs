@@ -44,6 +44,16 @@ public class DeliveryManager : MonoBehaviour
 
     public int BagCapacity => bagCapacity;
 
+    public void SetBagCapacity(int newCapacity)
+    {
+        bagCapacity = Mathf.Max(1, newCapacity);
+
+        Debug.Log(
+            "Delivery Bag Capacity Updated → " +
+            bagCapacity
+        );
+    }
+
     public bool DeliveryFailedState { get; private set; }
     public int FailurePenalty => failurePenalty;
 
@@ -373,6 +383,11 @@ public class DeliveryManager : MonoBehaviour
         if (startDoor != null)
         {
             startDoor.CloseDoor();
+        }
+
+        if (customerSpawner != null)
+        {
+            customerSpawner.ClearSpawnedCustomers();
         }
 
         Debug.Log(
