@@ -32,6 +32,21 @@ public class DeliveryManager : MonoBehaviour
     [Header("Route")]
     [SerializeField] private RouteManager routeManager;
 
+    [Header("Risk Multiplier")]
+    [SerializeField] private float[] rewardMultipliers =
+    {
+        1f,
+        1.5f,
+        2f,
+        2.5f,
+        3f
+    };
+
+    private int multiplierLevel = 0;
+
+    public float CurrentMultiplier =>
+        rewardMultipliers[multiplierLevel];
+
     [Header("Payment")]
     [SerializeField] private int baseOrderValue = 100;
     [SerializeField] private int failurePenalty = 25;
@@ -41,6 +56,8 @@ public class DeliveryManager : MonoBehaviour
 
     [Header("Customer Spawner")]
     [SerializeField] private CustomerSpawner customerSpawner;
+
+    [SerializeField] private TextMeshProUGUI multiplierText;
 
     public int BagCapacity => bagCapacity;
 
@@ -307,6 +324,7 @@ public class DeliveryManager : MonoBehaviour
 
     DeliveryActive = false;
     AwaitingPayment = true;
+    IncreaseMultiplier();
 
     // IMPORTANT:
     // Do NOT call UpdatePaymentValues() here.
@@ -322,6 +340,20 @@ public class DeliveryManager : MonoBehaviour
         " Coins. Return to Shopkeeper."
     );
 }
+
+    private void IncreaseMultiplier()
+    {
+        if (multiplierLevel < rewardMultipliers.Length - 1)
+        {
+            multiplierLevel++;
+        }
+
+        Debug.Log(
+            "Multiplier Increased → " +
+            CurrentMultiplier.ToString("0.0") +
+            "x"
+        );
+    }
 
     // --------------------------------------------------
     // NEXT CUSTOMER
@@ -374,7 +406,10 @@ public class DeliveryManager : MonoBehaviour
         if (!AwaitingPayment)
             return;
 
-        coins += PlayerProfit;
+       int finalProfit =
+        Mathf.RoundToInt(PlayerProfit * CurrentMultiplier);
+
+    coins += finalProfit;
 
         AwaitingPayment = false;
 
@@ -429,6 +464,8 @@ public class DeliveryManager : MonoBehaviour
             failurePenalty +
             " Coins. Return to Shopkeeper."
         );
+
+        multiplierLevel = 0;
     }
 
     // --------------------------------------------------
@@ -441,6 +478,14 @@ public class DeliveryManager : MonoBehaviour
         {
             coinText.text =
                 "COINS: " + coins;
+        }
+
+        if (multiplierText != null)
+        {
+            multiplierText.text =
+                "MULTIPLIER: " +
+                CurrentMultiplier.ToString("0.0") +
+                "x";
         }
     }
 

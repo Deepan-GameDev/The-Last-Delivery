@@ -10,6 +10,12 @@ public class RouteManager : MonoBehaviour
         Risk
     }
 
+    [Header("Reward")]
+    [SerializeField] private DeliveryManager deliveryManager;
+
+    [SerializeField] private TextMeshProUGUI multiplierText;
+    [SerializeField] private TextMeshProUGUI rewardPreviewText;
+
     [Header("UI")]
     [SerializeField] private GameObject routeDecisionPanel;
     [SerializeField] private TextMeshProUGUI routeTitle;
@@ -36,15 +42,22 @@ public class RouteManager : MonoBehaviour
         if (route == RouteType.Safe)
         {
             routeTitle.text = "SAFE ROUTE";
+
             routeDescription.text =
-                "Lower enemy risk.\nEnter this route?";
+                "Lower enemy risk.\n" +
+                "Enter this route?";
         }
         else if (route == RouteType.Risk)
         {
             routeTitle.text = "RISK ROUTE";
+
             routeDescription.text =
-                "Higher enemy danger.\nHigher reward.\nEnter this route?";
+                "Higher enemy danger.\n" +
+                "Higher reward.\n" +
+                "Enter this route?";
         }
+
+        UpdateRewardPreview();
 
         routeDecisionPanel.SetActive(true);
 
@@ -101,5 +114,38 @@ public class RouteManager : MonoBehaviour
         }
 
         selectedRoute = RouteType.None;
+    }
+
+    private void UpdateRewardPreview()
+    {
+        if (deliveryManager == null)
+            return;
+
+        float multiplier =
+            deliveryManager.CurrentMultiplier;
+
+        if (multiplierText != null)
+        {
+            multiplierText.text =
+                "CURRENT MULTIPLIER: " +
+                multiplier.ToString("0.0") +
+                "x";
+        }
+
+        if (rewardPreviewText != null)
+        {
+            int baseProfit =
+                deliveryManager.CurrentReward;
+
+            int estimatedReward =
+                Mathf.RoundToInt(
+                    baseProfit * multiplier
+                );
+
+            rewardPreviewText.text =
+                "EST. REWARD: " +
+                estimatedReward +
+                " COINS";
+        }
     }
 }
