@@ -169,6 +169,12 @@ public int BagCapacity => bagCapacity;
 
         UpdateCoinUI();
 
+        // Close the shop exit after payment is settled
+        if (startDoor != null)
+        {
+            startDoor.CloseDoor();
+        }
+
         Debug.Log(
             "Payment Collected! +" +
             PlayerProfit +
