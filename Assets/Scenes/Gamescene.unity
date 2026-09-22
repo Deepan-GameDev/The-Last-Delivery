@@ -61913,9 +61913,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 290573f73e636754db27a3db16bff62b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RouteManager
-  deliveryManager: {fileID: 0}
-  multiplierText: {fileID: 0}
-  rewardPreviewText: {fileID: 0}
+  deliveryManager: {fileID: 94499218}
+  multiplierText: {fileID: 704833565}
+  rewardPreviewText: {fileID: 1990815347}
   routeDecisionPanel: {fileID: 1230323181}
   routeTitle: {fileID: 1672053135}
   routeDescription: {fileID: 1789971680}
@@ -70019,7 +70019,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1230323182
 RectTransform:
   m_ObjectHideFlags: 0
