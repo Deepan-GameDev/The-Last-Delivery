@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 8253116550764380207}
   - component: {fileID: 8023093255864228812}
   - component: {fileID: 7966132978998407802}
+  - component: {fileID: 7918964075170942633}
   m_Layer: 0
   m_Name: Drone
   m_TagString: Untagged
@@ -28,7 +29,7 @@ Transform:
   m_GameObject: {fileID: 795615265786621542}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 11.74731, y: -3.43, z: 43.87458}
+  m_LocalPosition: {x: 60.2938, y: 0.89, z: 132.97511}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -120,6 +121,24 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &7918964075170942633
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 795615265786621542}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e958d57ab84743c498d2f7f9cc2638f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DroneAI
+  detectionRange: 15
+  fieldOfView: 90
+  eyeHeight: 0
+  detectionLayers:
+    serializedVersion: 2
+    m_Bits: 64
 --- !u!1 &1932316256388163948
 GameObject:
   m_ObjectHideFlags: 0

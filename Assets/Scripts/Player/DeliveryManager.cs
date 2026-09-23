@@ -57,6 +57,9 @@ public class DeliveryManager : MonoBehaviour
     [Header("Customer Spawner")]
     [SerializeField] private CustomerSpawner customerSpawner;
 
+    [Header("Route Enemy Spawner")]
+    [SerializeField] private RouteEnemySpawner routeEnemySpawner;
+
     [SerializeField] private TextMeshProUGUI multiplierText;
 
     public int BagCapacity => bagCapacity;
@@ -324,14 +327,20 @@ public class DeliveryManager : MonoBehaviour
 
     DeliveryActive = false;
     AwaitingPayment = true;
+
+    if (routeManager != null)
+    {
+        routeManager.ResetRoute();
+    }
+
     IncreaseMultiplier();
 
-    // IMPORTANT:
-    // Do NOT call UpdatePaymentValues() here.
-    // The active customer list is now empty,
-    // but PlayerProfit must keep the earned amount.
+    if (routeEnemySpawner != null)
+    {
+        routeEnemySpawner.ClearEnemiesAndDrones();
+    }
 
-    ShowDeliveryComplete();
+ShowDeliveryComplete();
 
     Debug.Log(
         "All Deliveries Completed! " +
@@ -454,6 +463,11 @@ public class DeliveryManager : MonoBehaviour
         AwaitingPayment = true;
         DeliveryFailedState = true;
 
+        if (routeEnemySpawner != null)
+    {
+        routeEnemySpawner.ClearEnemiesAndDrones();
+    }
+
         if (routeManager != null)
         {
             routeManager.OpenSelectedDoor();
@@ -468,9 +482,6 @@ public class DeliveryManager : MonoBehaviour
         multiplierLevel = 0;
     }
 
-    // --------------------------------------------------
-    // COINS
-    // --------------------------------------------------
 
     private void UpdateCoinUI()
     {
@@ -533,6 +544,44 @@ public class DeliveryManager : MonoBehaviour
             CurrentCustomer +
             " | Total Orders: " +
             activeCustomers.Count
+        );
+    }
+
+        public void ResetAfterCaught()
+    {
+        DeliveryActive = false;
+        AwaitingPayment = false;
+        DeliveryFailedState = true;
+
+        // Reset multiplier
+        multiplierLevel = 0;
+
+        // Clear delivery data
+        activeCustomers.Clear();
+
+        deliveredCount = 0;
+
+        CurrentOrderValue = 0;
+        ShopkeeperShare = 0;
+        PlayerProfit = 0;
+        CurrentReward = 0;
+
+        // Close start door
+        if (startDoor != null)
+        {
+            startDoor.CloseDoor();
+        }
+
+        // Hide completion panel
+        if (deliveryCompletePanel != null)
+        {
+            deliveryCompletePanel.SetActive(false);
+        }
+
+        UpdateCoinUI();
+
+        Debug.Log(
+            "Delivery Run Reset After Player Was Caught."
         );
     }
 }

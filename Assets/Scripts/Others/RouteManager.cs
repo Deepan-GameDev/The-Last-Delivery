@@ -128,8 +128,6 @@ public class RouteManager : MonoBehaviour
         {
             riskDoor.OpenDoor();
         }
-
-        selectedRoute = RouteType.None;
     }
 
     private void UpdateRewardPreview()
@@ -163,5 +161,12 @@ public class RouteManager : MonoBehaviour
                 estimatedReward +
                 " COINS";
         }
+    }
+
+        public void ResetRoute()
+    {
+        selectedRoute = RouteType.None;
+
+        Debug.Log("Route Reset → Ready for next delivery.");
     }
 }
