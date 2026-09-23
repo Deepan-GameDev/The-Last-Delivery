@@ -25,6 +25,9 @@ public class RouteManager : MonoBehaviour
     [SerializeField] private RouteDoorController safeDoor;
     [SerializeField] private RouteDoorController riskDoor;
 
+    [Header("Enemy Spawner")]
+    [SerializeField] private RouteEnemySpawner enemySpawner;
+
     [Header("Player")]
     [SerializeField] private MonoBehaviour playerMovement;
 
@@ -72,10 +75,20 @@ public class RouteManager : MonoBehaviour
         if (selectedRoute == RouteType.Safe)
         {
             safeDoor.CloseDoor();
+
+            if (enemySpawner != null)
+            {
+                enemySpawner.SpawnSafeEnemies();
+            }
         }
         else if (selectedRoute == RouteType.Risk)
         {
             riskDoor.CloseDoor();
+
+            if (enemySpawner != null)
+            {
+                enemySpawner.SpawnRiskEnemies();
+            }
         }
 
         if (playerMovement != null)
@@ -84,7 +97,10 @@ public class RouteManager : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
-        Debug.Log("Route Accepted: " + selectedRoute);
+        Debug.Log(
+            "Route Accepted: " +
+            selectedRoute
+        );
     }
 
     public void CancelRoute()
